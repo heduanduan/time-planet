@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit2, Trash2, Calendar } from 'lucide-react';
+import Image from 'next/image';
 import type { Memory } from '../lib/types';
 import type { Character } from '../lib/types';
 
@@ -154,11 +155,12 @@ export default function MemoryCard({ memory, character, onEdit, onDelete }: Memo
 
               {/* 图片 */}
               {memory.image_url && (
-                <div className="mt-4 rounded-xl overflow-hidden">
-                  <img
+                <div className="mt-4 rounded-xl overflow-hidden relative">
+                  <Image
                     src={memory.image_url}
                     alt="记忆图片"
-                    className="w-full h-auto object-cover"
+                    fill
+                    className="object-cover"
                   />
                 </div>
               )}

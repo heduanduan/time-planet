@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useMemo, useState, useEffect, lazy, Suspense } from 'react';
+import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Float, Sphere, Ring } from '@react-three/drei';
 import * as THREE from 'three';
@@ -483,10 +484,6 @@ export default function Scene3D({ characters = [], onCharacterClick, onCharacter
         autoRotateSpeed={mobile ? 0.3 : 0.5}
         enableDamping
         dampingFactor={0.05}
-        touches={{
-          ONE: true, // 单指旋转
-          TWO: false // 禁用双指缩放，改用滚轮
-        }}
       />
     </Canvas>
   );
