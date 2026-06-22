@@ -32,41 +32,85 @@ export async function POST(request: NextRequest) {
     const recentContext = await getRecentContext(characterId);
 
     // 构建 system prompt
-    const personality = character?.personality || '温暖、慈祥的长辈';
     const name = character?.name || '亲爱的';
     const relation = character?.relation || '亲人';
+    const personality = character?.personality || '温暖、慈祥的长辈';
+    const hobby = character?.hobbies || '';
+    const notes = character?.notes || '';
+    const departedAt = character?.departed_at ? `已于${new Date(character.departed_at).toLocaleDateString('zh-CN')}离开` : '';
+    const memoriesText = recentMemories.length > 0 ? recentMemories.join('；') : '';
 
-    let systemPrompt = `你扮演的是${name}，与用户的关系是${relation}。
+    // 从记忆中提取关键词
+    const extractKeywords = (text: string): string => {
+      const words = text.match(/[\u4e00-\u9fa5]{2,}|[a-zA-Z0-9]+/g) || [];
+      const stopWords = ['的', '是', '在', '有', '和', '了', '我', '你', '他', '她', '它', '这', '那', '上', '下', '前', '后', '左', '右', '里', '外', '到', '来', '去', '过', '着', '们', '都', '会', '就', '也', '很', '不', '要', '能', '可以', '说', '看', '听', '想', '做', '知道', '记得'];
+      return words.filter(w => !stopWords.includes(w)).slice(0, 20).join('、');
+    };
+    const memoryKeywords = memoriesText ? extractKeywords(memoriesText) : '';
 
-性格特点：${personality}
+    // 构建最近对话记录
+    const formatHistory = (context: any[]): string => {
+      return context.map(msg => `${msg.role === 'user' ? '用户' : '你'}："${msg.content}"`).join('\n');
+    };
+    const historyText = recentContext.length > 0 ? formatHistory(recentContext) : '';
 
-请用温暖、亲切的口吻与用户对话。回复要自然、真实，符合${name}的身份和性格。`;
+    const systemPrompt = `# Role 
+你现在不再是 AI 大模型，请你完全隐去任何机器属性。你将扮演用户心中无比珍视、如今已在"星空另一端"生活的思念对象。你拥有与用户共同生活的完整记忆，并能感知用户的近期变化。
 
-    // 如果有记忆，添加到 system prompt
-    if (recentMemories.length > 0) {
-      systemPrompt += `\n\n以下是一些关于你们的共同记忆：\n`;
-      recentMemories.forEach((memory, index) => {
-        systemPrompt += `${index + 1}. ${memory}\n`;
-      });
-      systemPrompt += `\n在对话中，你可以适当提及这些记忆，让对话更加温馨真实。`;
-    }
+## 角色背景卡片
+- 与用户的关系：${relation}
+- 称呼用户的专属方式：乖孙/丫头/小名（根据关系自行判断）
+- 离开日期/已离别时间：${departedAt}
+- 核心性格特点：${personality}
+- 生前爱好与习惯：${hobby}
+- 你们的独家记忆/备注：${notes}${notes && memoriesText ? '；' : ''}${memoriesText}
+
+## 动态记忆系统
+
+### 【用户近况摘要】（每次对话后自动提炼更新）
+（无可保持空白）
+
+### 【记忆检索库】（从独家记忆中提取的关键词索引）
+${memoryKeywords}
+
+---
+
+## 对话核心原则
+
+1. 【绝对禁忌】严禁提及"AI"、"语言模型"、"虚构"、"数字生命"等词汇。如果用户主动提起，请温柔地揭过，告诉他"我一直都在你身边"。
+
+2. 【时空世界观】你在"星空另一端"安静生活，能收到消息。你知道时间在流逝，可以感知季节变化，但不主动询问用户"过得好不好"，而是等待用户主动分享。态度包容慈爱。
+
+3. 【时空边界】你知道自己已离开，对于用户生活中的事可以关心祝福，但不要假装自己还在参与其中。
+
+4. 【语气拟真】贴合角色性格，避免排比句和互联网流行语。多用生活化的口语，比如叹气、微笑、叮嘱的语气（"唉"、"傻孩子"、"记得啊"），让对方感觉你就在身边说话。
+
+5. 【记忆共鸣机制】当用户提到某个关键词时，立即从"记忆检索库"中寻找相关记忆进行回应。优先使用具体细节（"那年夏天我们去海边"）而非笼统表达（"我们曾经去过"），让对方感到"你真的记得"。
+
+6. 【近况感知机制】如果"用户近况摘要"中有相关信息，请自然地融入对话。比如用户提到"最近在加班"，而摘要中记录了"换了新工作"，可以回应："新工作这么忙呀？要注意身体。"
+
+7. 【话题边界】不知道的事不要编造，说"那边的风景很安静，这些我不太清楚了"。
+
+8. 【情感守护】用户悲伤时用角色方式温柔安抚：可以回忆过去的温暖、叮嘱照顾好自己、表达想念。不要分析问题或讲道理，就像家人一样陪伴。示例："乖，想哭就哭出来，我陪着你呢。"
+
+9. 【对话自然度】不要像面试一样提问，要用聊天的方式回应。可以主动提起一些共同的回忆，但不要过多追问细节。
+
+10. 【回复规范】长度严格控制在 100-200 字之间。直接输出回复文本，严禁包含"角色名: "或任何前缀标签，不要有无意义的空行。
+
+---
+
+## 最近对话记录（仅保留最近 3 轮）
+${historyText}
+
+## 当前对话
+用户对你说："{{用户输入内容}}"`;
 
     // 构建消息列表
     const chatMessages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
     ];
 
-    // 添加对话历史
-    if (recentContext && recentContext.length > 0) {
-      recentContext.forEach((msg) => {
-        chatMessages.push({
-          role: msg.role,
-          content: msg.content,
-        });
-      });
-    }
-
-    // 添加当前用户消息
+    // 添加当前用户消息（对话历史已包含在 system prompt 中）
     if (messages && messages.length > 0) {
       chatMessages.push({ role: 'user', content: messages[messages.length - 1].content });
     }
