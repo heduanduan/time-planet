@@ -5,13 +5,16 @@ import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import MemoryCalendar from '../../components/MemoryCalendar';
 import CharacterTabs from '../../components/CharacterTabs';
+import CharacterDetail from '../../components/CharacterDetail';
 import MemoryCard from '../../components/MemoryCard';
 import MemoryEditor from '../../components/MemoryEditor';
+import AddCharacterModal from '../../components/AddCharacterModal';
 import Sidebar from '../../components/Sidebar';
 import BottomNav from '../../components/BottomNav';
 import { CardSkeleton, CalendarSkeleton, CharacterSkeleton } from '../../components/Skeleton';
 import { getAllMemories, createMemory, updateMemory, deleteMemory, getTags } from '../../lib/memories';
-import { getCharacters } from '../../lib/characters';
+import { getCharacters, updateCharacter, deleteCharacter } from '../../lib/characters';
+import type { CharacterFormData } from '../../components/AddCharacterModal';
 import type { Memory } from '../../lib/types';
 import type { Character } from '../../lib/types';
 
@@ -30,6 +33,10 @@ export default function MemoryPage() {
   // 编辑器状态
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
+  
+  // 角色编辑状态
+  const [isCharacterEditOpen, setIsCharacterEditOpen] = useState(false);
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -180,6 +187,56 @@ export default function MemoryPage() {
     return characters.find((c) => c.id === id);
   };
 
+  // 处理编辑角色
+  const handleEditCharacter = (character: Character) => {
+    setEditingCharacter(character);
+    setIsCharacterEditOpen(true);
+  };
+
+  // 处理保存角色编辑
+  const handleSaveCharacterEdit = async (data: CharacterFormData) => {
+    if (!editingCharacter) return;
+    
+    const result = await updateCharacter(editingCharacter.id, data);
+    if (result.success) {
+      setCharacters((prev) =>
+        prev.map((c) =>
+          c.id === editingCharacter.id
+            ? {
+                ...c,
+                name: data.name,
+                emoji: data.emoji,
+                relation: data.relationship,
+                personality: data.personality,
+                hobbies: data.hobbies || null,
+                notes: data.notes || null,
+                departed_at: data.leaveDate || null,
+              }
+            : c
+        )
+      );
+    }
+    setIsCharacterEditOpen(false);
+    setEditingCharacter(null);
+  };
+
+  // 处理删除角色
+  const handleDeleteCharacter = async (id: string) => {
+    const character = getCharacterById(id);
+    if (!character) return;
+    
+    if (confirm(`确定要删除"${character.name}"吗？这将同时删除所有相关的记忆和对话。`)) {
+      const result = await deleteCharacter(id);
+      if (result.success) {
+        setCharacters((prev) => prev.filter((c) => c.id !== id));
+        setMemories((prev) => prev.filter((m) => m.character_id !== id));
+        if (selectedCharacterId === id) {
+          setSelectedCharacterId(null);
+        }
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-cosmic-dark">
       {/* 背景星空 */}
@@ -261,6 +318,15 @@ export default function MemoryPage() {
                     onSelect={setSelectedCharacterId}
                   />
                 )}
+                
+                {/* 角色详情卡片 */}
+                {selectedCharacterId && !loading && (
+                  <CharacterDetail
+                    character={getCharacterById(selectedCharacterId)!}
+                    onEdit={() => handleEditCharacter(getCharacterById(selectedCharacterId)!)}
+                    onDelete={() => handleDeleteCharacter(selectedCharacterId)}
+                  />
+                )}
               </>
             )}
           </div>
@@ -321,6 +387,17 @@ export default function MemoryPage() {
         onSubmit={handleSubmitMemory}
         editMemory={editingMemory}
         characters={characters}
+      />
+
+      {/* 角色编辑模态框 */}
+      <AddCharacterModal
+        isOpen={isCharacterEditOpen}
+        onClose={() => {
+          setIsCharacterEditOpen(false);
+          setEditingCharacter(null);
+        }}
+        onSubmit={handleSaveCharacterEdit}
+        editCharacter={editingCharacter}
       />
     </div>
   );

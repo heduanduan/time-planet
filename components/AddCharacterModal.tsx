@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, Calendar } from 'lucide-react';
+
+import type { Character } from '../lib/types';
 
 interface AddCharacterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CharacterFormData) => void;
+  editCharacter?: Character | null;
 }
 
 export interface CharacterFormData {
@@ -33,16 +36,53 @@ const relationshipOptions = [
   '老师', '其他亲人', '其他'
 ];
 
-export default function AddCharacterModal({ isOpen, onClose, onSubmit }: AddCharacterModalProps) {
-  const [formData, setFormData] = useState<CharacterFormData>({
-    name: '',
-    emoji: '👵',
-    relationship: '',
-    personality: '',
-    hobbies: '',
-    notes: '',
-    leaveDate: '',
+export default function AddCharacterModal({ isOpen, onClose, onSubmit, editCharacter }: AddCharacterModalProps) {
+  const [formData, setFormData] = useState<CharacterFormData>(() => {
+    if (editCharacter) {
+      return {
+        name: editCharacter.name,
+        emoji: editCharacter.emoji,
+        relationship: editCharacter.relation || '',
+        personality: editCharacter.personality || '',
+        hobbies: editCharacter.hobbies || '',
+        notes: editCharacter.notes || '',
+        leaveDate: editCharacter.departed_at || '',
+      };
+    }
+    return {
+      name: '',
+      emoji: '👵',
+      relationship: '',
+      personality: '',
+      hobbies: '',
+      notes: '',
+      leaveDate: '',
+    };
   });
+
+  useEffect(() => {
+    if (editCharacter) {
+      setFormData({
+        name: editCharacter.name,
+        emoji: editCharacter.emoji,
+        relationship: editCharacter.relation || '',
+        personality: editCharacter.personality || '',
+        hobbies: editCharacter.hobbies || '',
+        notes: editCharacter.notes || '',
+        leaveDate: editCharacter.departed_at || '',
+      });
+    } else {
+      setFormData({
+        name: '',
+        emoji: '👵',
+        relationship: '',
+        personality: '',
+        hobbies: '',
+        notes: '',
+        leaveDate: '',
+      });
+    }
+  }, [editCharacter, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,8 +148,8 @@ export default function AddCharacterModal({ isOpen, onClose, onSubmit }: AddChar
                     <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-semibold text-white">新增思念对象</h3>
-                    <p className="text-[10px] sm:text-xs text-gray-400">创建一个新的分身</p>
+                    <h3 className="text-base sm:text-lg font-semibold text-white">{editCharacter ? '编辑思念对象' : '新增思念对象'}</h3>
+                    <p className="text-[10px] sm:text-xs text-gray-400">{editCharacter ? '修改分身信息' : '创建一个新的分身'}</p>
                   </div>
                 </div>
                 <button
@@ -236,7 +276,7 @@ export default function AddCharacterModal({ isOpen, onClose, onSubmit }: AddChar
                   whileTap={{ scale: 0.98 }}
                   className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-cosmic-purple to-cosmic-blue text-white font-medium rounded-xl shadow-lg shadow-cosmic-purple/30 hover:shadow-cosmic-purple/50 transition-all text-sm sm:text-base"
                 >
-                  创建分身
+                  {editCharacter ? '保存修改' : '创建分身'}
                 </motion.button>
               </form>
             </div>
