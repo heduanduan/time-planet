@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- 《时空星球》数据库 DDL
 -- 版本: v1.0
 -- 创建日期: 2026-06-14
@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS characters (
   emoji TEXT DEFAULT '🌟',
   relation TEXT,
   personality TEXT,
+  hobbies TEXT,
+  notes TEXT,
   avatar_url TEXT,
   departed_at DATE,
   created_at TIMESTAMPTZ DEFAULT now()

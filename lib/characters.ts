@@ -148,6 +148,8 @@ export async function getCharacter(id: string): Promise<{ success: boolean; mess
 // 更新角色信息
 export async function updateCharacter(id: string, data: Partial<CreateCharacterData>): Promise<{ success: boolean; message: string }> {
   try {
+    console.log('updateCharacter 收到的数据:', data);
+    
     const { error } = await supabase
       .from('characters')
       .update({

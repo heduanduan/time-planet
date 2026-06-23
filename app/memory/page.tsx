@@ -197,6 +197,8 @@ export default function MemoryPage() {
   const handleSaveCharacterEdit = async (data: CharacterFormData) => {
     if (!editingCharacter) return;
     
+    console.log('保存编辑数据:', data);
+    
     const result = await updateCharacter(editingCharacter.id, {
       ...data,
       leave_date: data.leaveDate,
