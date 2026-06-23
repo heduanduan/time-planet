@@ -155,6 +155,8 @@ export async function updateCharacter(id: string, data: Partial<CreateCharacterD
         emoji: data.emoji,
         relation: data.relationship,
         personality: data.personality,
+        hobbies: data.hobbies || null,
+        notes: data.notes || null,
         departed_at: data.leave_date || null,
       })
       .eq('id', id);
