@@ -197,7 +197,10 @@ export default function MemoryPage() {
   const handleSaveCharacterEdit = async (data: CharacterFormData) => {
     if (!editingCharacter) return;
     
-    const result = await updateCharacter(editingCharacter.id, data);
+    const result = await updateCharacter(editingCharacter.id, {
+      ...data,
+      leave_date: data.leaveDate,
+    });
     if (result.success) {
       setCharacters((prev) =>
         prev.map((c) =>
